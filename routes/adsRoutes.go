@@ -101,7 +101,7 @@ func Ads(router *gin.Engine, gormDB *gorm.DB) {
 			return
 		}
 
-		// Gget ExpirationTimeMinutes
+		// Get ExpirationTimeMinutes
 		var updateData models.Ad
 		err = c.ShouldBindJSON(&updateData)
 		if err == nil && updateData.ExpirationTimeMinutes > 0 {

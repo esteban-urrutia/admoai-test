@@ -131,7 +131,7 @@ func deactivateExpiredAds(gormDB *gorm.DB) {
     }
 
     if deactivatedCount > 0 {
-        log.Printf("Deactivated %d expired ads based", deactivatedCount)
+        log.Printf("Deactivated %d expired ads", deactivatedCount)
     }
 }
 
