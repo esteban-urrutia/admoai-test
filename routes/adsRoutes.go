@@ -41,6 +41,11 @@ func Ads(router *gin.Engine, gormDB *gorm.DB) {
 		newAd.Status = "active"
 		newAd.DeactivatedAt = time.Time{}
 
+		// Set ExpirationTime to 10 if not provided
+		if newAd.ExpirationTimeMinutes == 0 {
+			newAd.ExpirationTimeMinutes = 10
+		}
+
 		err = gormDB.Create(&newAd).Error
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
@@ -96,10 +101,22 @@ func Ads(router *gin.Engine, gormDB *gorm.DB) {
 			return
 		}
 
+		// Gget ExpirationTimeMinutes
+		var updateData models.Ad
+		err = c.ShouldBindJSON(&updateData)
+		if err == nil && updateData.ExpirationTimeMinutes > 0 {
+			// Use provided ExpirationTimeMinutes
+			ad.ExpirationTimeMinutes = updateData.ExpirationTimeMinutes
+		} else if ad.ExpirationTimeMinutes == 0 {
+			// Set ExpirationTimeMinutes to 10 if not provided
+			ad.ExpirationTimeMinutes = 10
+		}
+
 		// Update status to active and reset DeactivatedAt to zero time (null)
 		result := gormDB.Model(&ad).Updates(models.Ad{
-			Status:        "active",
-			DeactivatedAt: time.Time{},
+			Status:                "active",
+			DeactivatedAt:         time.Time{},
+			ExpirationTimeMinutes: ad.ExpirationTimeMinutes,
 		})
 
 		if result.Error != nil {
@@ -123,7 +140,7 @@ func Ads(router *gin.Engine, gormDB *gorm.DB) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "placement parameter is required"})
 			return
 		}
-		
+
 		if status == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "status parameter is required"})
 			return
