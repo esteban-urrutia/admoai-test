@@ -3,13 +3,15 @@ package main
 import (
 	"database/sql"
 	"log"
+	"models"
 	"os"
 	"os/signal"
 	"routes"
-	"models"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -96,6 +98,31 @@ func setupGracefulShutdown(sqlDB *sql.DB) {
 	}()
 }
 
+// Deactivates ads that have exceeded their default duration
+func deactivateExpiredAds(gormDB *gorm.DB) {
+	// Default ad duration in minutes
+	const defaultAdDurationMinutes = 60
+
+	// Calculate the expiration time
+	cutoffTime := time.Now().Add(-time.Duration(defaultAdDurationMinutes) * time.Minute)
+
+	// Find and deactivate expired ads
+	result := gormDB.Model(&models.Ad{}).
+		Where("status = ? AND created_at <= ?", "active", cutoffTime).
+		Updates(models.Ad{
+			Status:        "inactive",
+			DeactivatedAt: time.Now(),
+		})
+	if result.Error != nil {
+		log.Printf("Error deactivating expired ads: %v", result.Error)
+		return
+	}
+
+	if result.RowsAffected > 0 {
+		log.Printf("Deactivated %d expired ads (older than %d minutes)", result.RowsAffected, defaultAdDurationMinutes)
+	}
+}
+
 func main() {
 	// initialize database
 	gormDB, sqlDB := initializeDB()
@@ -103,12 +130,12 @@ func main() {
 	// Setup graceful shutdown handling
 	setupGracefulShutdown(sqlDB)
 
-	// // initialize cron jobs
-	// c := cron.New()
-	// c.AddFunc("*/5 * * * *", func() {
-	// 	backupPostgresDB()
-	// })
-	// c.Start()
+	// initialize cron jobs
+	c := cron.New()
+	c.AddFunc("* * * * *", func() {
+		deactivateExpiredAds(gormDB)
+	})
+	c.Start()
 
 	// Initialize Gin router
 	router := gin.Default()
