@@ -112,4 +112,41 @@ func Ads(router *gin.Engine, gormDB *gorm.DB) {
 			"message":       fmt.Sprintf("Ad %s reactivated successfully", c.Param("id")),
 		})
 	})
+
+	// Get ads by placement and status
+	router.GET("/ads", func(c *gin.Context) {
+		placement := c.Query("placement")
+		status := c.Query("status")
+
+		// Validate required parameters
+		if placement == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "placement parameter is required"})
+			return
+		}
+		
+		if status == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "status parameter is required"})
+			return
+		}
+
+		// Validate status value
+		if status != "active" && status != "inactive" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "status must be either 'active' or 'inactive'"})
+			return
+		}
+
+		var ads []models.Ad
+		err := gormDB.Where("placement = ? AND status = ?", placement, status).Find(&ads).Error
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"placement": placement,
+			"status":    status,
+			"count":     len(ads),
+			"ads":       ads,
+		})
+	})
 }
