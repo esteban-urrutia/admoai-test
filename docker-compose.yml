@@ -9,7 +9,7 @@ services:
       - "8080:8080" # Host 8080 - Container 8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # needed for reading container logs
-      - ./data:/app/data # Persist SQLite database
+      - ./data:/sqliteData # Persist SQLite database
     restart: unless-stopped
     stop_grace_period: 1m
     logging:

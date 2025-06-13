@@ -1,9 +1,10 @@
-module atmoai
+module admoai
 
 go 1.24.3
 
 require (
 	github.com/gin-gonic/gin v1.10.1
+	github.com/robfig/cron v1.2.0
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.30.0
 )
