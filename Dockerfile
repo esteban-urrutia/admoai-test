@@ -22,6 +22,9 @@ FROM alpine:latest
 RUN apk add --no-cache docker-cli
 RUN apk add --no-cache build-base
 
+# Create the sqliteData directory for database persistence
+RUN mkdir -p /sqliteData
+
 # Copy the built executable from the builder stage
 COPY --from=builder /admoai /admoai
 
