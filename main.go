@@ -135,6 +135,20 @@ func deactivateExpiredAds(gormDB *gorm.DB) {
     }
 }
 
+// Logs a warning if there are more active ads than the threshold
+func adsQuantityAlert(gormDB *gorm.DB, threshold int) {
+    var count int64
+    err := gormDB.Model(&models.Ad{}).Where("status = ?", "active").Count(&count).Error
+    if err != nil {
+        log.Printf("Error counting active ads: %v", err)
+        return
+    }
+
+    if count > int64(threshold) {
+        log.Printf("WARNING: %d active ads detected, which exceeds the threshold of %d", count, threshold)
+    }
+}
+
 func main() {
 	// initialize database
 	gormDB, sqlDB := initializeDB()
@@ -146,6 +160,7 @@ func main() {
 	c := cron.New()
 	c.AddFunc("* * * * *", func() {
 		deactivateExpiredAds(gormDB)
+		adsQuantityAlert(gormDB, 10) // Example threshold of 10 active ads at the same time
 	})
 	c.Start()
 
