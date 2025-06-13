@@ -18,7 +18,7 @@ import (
 
 func initializeDB() (*gorm.DB, *sql.DB) {
 	// define database connection string for SQLite
-	dbPath := "database.db" // SQLite database file
+	dbPath := "/app/data/database.db" // SQLite database file
 
 	// get a database handler
 	gormDB, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})

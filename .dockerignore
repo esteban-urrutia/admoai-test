@@ -1,0 +1,11 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode/
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

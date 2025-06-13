@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080" # Host 8080 - Container 8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # needed for reading container logs
+      - ./data:/app/data # Persist SQLite database
+    restart: unless-stopped
+    stop_grace_period: 1m
+    logging:
+      driver: "local"
+      options:
+        max-size: "250m"
+        max-file: "4"
