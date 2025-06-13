@@ -100,27 +100,39 @@ func setupGracefulShutdown(sqlDB *sql.DB) {
 
 // Deactivates ads that have exceeded their default duration
 func deactivateExpiredAds(gormDB *gorm.DB) {
-	// Default ad duration in minutes
-	const defaultAdDurationMinutes = 60
+    // Find all active ads
+    var activeAds []models.Ad
+    err := gormDB.Where("status = ?", "active").Find(&activeAds).Error
+    if err != nil {
+        log.Printf("Error fetching active ads: %v", err)
+        return
+    }
 
-	// Calculate the expiration time
-	cutoffTime := time.Now().Add(-time.Duration(defaultAdDurationMinutes) * time.Minute)
+    var deactivatedCount int64
+    for _, ad := range activeAds {
+        // Calculate expiration time for this specific ad
+        expirationTime := ad.CreatedAt.Add(time.Duration(ad.ExpirationTimeMinutes) * time.Minute)
+        
+        // Check if the ad has expired
+        if time.Now().After(expirationTime) {
+            // Deactivate this specific ad
+            result := gormDB.Model(&ad).Updates(models.Ad{
+                Status:        "inactive",
+                DeactivatedAt: time.Now(),
+            })
+            
+            if result.Error != nil {
+                log.Printf("Error deactivating ad ID %d: %v", ad.ID, result.Error)
+                continue
+            }
+            
+            deactivatedCount += result.RowsAffected
+        }
+    }
 
-	// Find and deactivate expired ads
-	result := gormDB.Model(&models.Ad{}).
-		Where("status = ? AND created_at <= ?", "active", cutoffTime).
-		Updates(models.Ad{
-			Status:        "inactive",
-			DeactivatedAt: time.Now(),
-		})
-	if result.Error != nil {
-		log.Printf("Error deactivating expired ads: %v", result.Error)
-		return
-	}
-
-	if result.RowsAffected > 0 {
-		log.Printf("Deactivated %d expired ads (older than %d minutes)", result.RowsAffected, defaultAdDurationMinutes)
-	}
+    if deactivatedCount > 0 {
+        log.Printf("Deactivated %d expired ads based on their individual expiration times", deactivatedCount)
+    }
 }
 
 func main() {
