@@ -112,7 +112,7 @@ func Logs(router *gin.Engine) {
     router.GET("/logs", func(c *gin.Context) {
         startDateStr := c.Query("startDate")
         endDateStr := c.Query("endDate")
-        containerName := "admoai-app-1" // Default container name
+        containerName := "admoai-test-app-1" // Default container name
 
         // Validate required parameters
         if startDateStr == "" || endDateStr == "" {
